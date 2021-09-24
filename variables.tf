@@ -9,6 +9,7 @@ variable "tg_routes" {
 
 variable "common_tags" {
   type = map(string)
+  default = {}
 }
 
 variable "project_name" {
@@ -26,13 +27,15 @@ variable "subnets" {
       cidr: list(string)
     })
   })
-  default = {private: {count:2, cidr: []}, public: {count:2, cidr: []}}
+
+  default = {private: {count: 2, cidr: []}, public: {count: 2, cidr: []}}
+
   validation {
-    condition = var.subnets.private.cidr == [] || length(var.subnets.private.cidr) == var.subnets.private.count
+    condition = length(var.subnets.private.cidr) == 0 || length(var.subnets.private.cidr) == var.subnets.private.count
     error_message = "Private Subnets CIDR size must be equal to private subnets count."
   }
   validation {
-    condition = var.subnets.public.cidr == [] || length(var.subnets.public.cidr) == var.subnets.public.count
+    condition = length(var.subnets.public.cidr) == 0 || length(var.subnets.public.cidr) == var.subnets.public.count
     error_message = "Public Subnets CIDR size must be equal to public subnets count."
   }
 }

@@ -9,7 +9,7 @@ variable "tg_routes" {
 
 variable "common_tags" {
   type = map(string)
-  default = {}
+  default = ({})
 }
 
 variable "project_name" {

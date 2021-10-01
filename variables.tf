@@ -39,15 +39,17 @@ variable "vpc_endpoints" {
   type    = list(string)
   default = []
   validation {
-    condition     = contains(var.vpc_endpoints, "s3") || contains(var.vpc_endpoints, "sns") || contains(var.vpc_endpoints, "execute-api") || contains(var.vpc_endpoints, "dynamodb") || contains(var.vpc_endpoints, "rds")
-    error_message = "Invalid VPC Endpoint service, allowed values are s3, sns, execute-api, dynamodb, rds."
+    condition     = alltrue([
+    for vpce in var.vpc_endpoints : contains(["s3", "sns", "execute-api", "dynamodb", "ecr.dkr", "ecr.api"], vpce)
+    ])
+    error_message = "Invalid VPC Endpoint service, allowed values are s3, sns, execute-api, dynamodb, ecr.api, ecr.dkr ."
   }
 }
 
 variable "bastion" {
   type = object({
-    enabled: bool,
-    certificate_name: string,
-    certificate_key: optional(string)
+    enabled : bool,
+    certificate_name : string,
+    certificate_key : optional(string)
   })
 }

@@ -50,6 +50,6 @@ variable "bastion" {
   type = object({
     enabled : bool,
     certificate_name : string,
-    certificate_key : optional(string)
+    certificate_key : string
   })
 }

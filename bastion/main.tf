@@ -21,7 +21,6 @@ resource "aws_security_group" "ssh_access" {
 }
 
 resource "aws_key_pair" "default" {
-  count = var.acm_key_file != null ? 1 : 0
   key_name   = var.acm_key_name
   public_key = file(var.acm_key_file)
 }

@@ -1,6 +1,3 @@
-terraform {
-  experiments = [module_variable_optional_attrs]
-}
 
 data "aws_availability_zones" "az" {}
 

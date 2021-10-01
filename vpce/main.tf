@@ -25,19 +25,23 @@ resource "aws_security_group" "vpc_endpoint_security_group" {
 
 }
 
+locals {
+  isGateway = [ for endpoint in var.vpc_endpoints: contains(["s3", "dynamodb"], endpoint )]
+}
+
 resource "aws_vpc_endpoint" "vpc_endpoints" {
   count        = length(var.vpc_endpoints)
   service_name = "com.amazonaws.${data.aws_region.current.name}.${var.vpc_endpoints[count.index]}"
   vpc_id       = var.vpc.id
 
-  vpc_endpoint_type = var.vpc_endpoints[count.index] == "s3" || var.vpc_endpoints[count.index] == "dynamodb" ? "Gateway" : "Interface"
-  route_table_ids   = var.vpc_endpoints[count.index] == "s3" || var.vpc_endpoints[count.index] == "dynamodb" ? var.vpc.private_route_table_ids : null
+  vpc_endpoint_type = local.isGateway[count.index] ? "Gateway" : "Interface"
+  route_table_ids   = local.isGateway[count.index] ? var.vpc.private_route_table_ids : null
 
-  subnet_ids = var.vpc_endpoints[count.index] != "s3" && var.vpc_endpoints[count.index] != "dynamodb" ? var.vpc.private_subnets_ids : null
+  subnet_ids = local.isGateway[count.index]  ? null : var.vpc.private_subnets_ids
 
-  private_dns_enabled = var.vpc_endpoints[count.index] != "s3" && var.vpc_endpoints[count.index] != "dynamodb" ? true : null
+  private_dns_enabled = local.isGateway[count.index]  ? null : true
 
-  security_group_ids = var.vpc_endpoints[count.index] != "s3" && var.vpc_endpoints[count.index] != "dynamodb" ? [aws_security_group.vpc_endpoint_security_group[0].id] : null
+  security_group_ids = local.isGateway[count.index]  ? null : [aws_security_group.vpc_endpoint_security_group[0].id]
 
   tags = { "Name" : "vpce-${var.vpc_endpoints[count.index]}" }
 

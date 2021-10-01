@@ -1,7 +1,5 @@
 data "aws_availability_zones" "az" {}
 
-data "aws_region" "current" {}
-
 data "aws_ec2_transit_gateway" "transit" {
   count = length(var.tg_routes) > 0 ? 1 : 0
 }
@@ -135,6 +133,23 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "tg_vpc_attachment" {
   vpc_id             = aws_vpc.main.id
 }
 
+
+module "vpce" {
+  source = "./vpce"
+  count = length(var.vpc_endpoints) > 0 ? 1 : 0
+  vpc = {id: aws_vpc.main.id, cidr: aws_vpc.main.cidr_block, private_subnets_ids: aws_subnet.private.*.id, private_route_table_ids: aws_route_table.private.*.id}
+  vpc_endpoints = var.vpc_endpoints
+}
+
+module "bastion" {
+  source = "./bastion"
+  count = var.bastion ? 1 : 0
+  acm_key_name = ""
+  vpc = {id: aws_vpc.main.id, public_subnet_id: aws_subnet.public[0].id}
+
+}
+
+
 resource "aws_ssm_parameter" "private_subnet_ids" {
   count       = var.subnets.private.count
   name        = "/infrastructure/vpc/subnets/private/${count.index}/id"
@@ -148,47 +163,4 @@ resource "aws_ssm_parameter" "vpc" {
   description = "Export vpc id"
   type        = "String"
   value       = aws_vpc.main.id
-}
-
-resource "aws_security_group" "vpc_endpoint_security_group" {
-  count = length(var.vpc_endpoints) > 0  && contains(var.vpc_endpoints, "s3") || contains(var.vpc_endpoints, "dynamodb") ? 1 : 0
-
-  name        = "VPCEndpointSecurityGroup"
-  description = "VPC Endpoint SecurityGroup"
-  vpc_id      = aws_vpc.main.id
-
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = [aws_vpc.main.cidr_block]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = merge(var.common_tags, { Name = "VPCEndpointSecurityGroup" })
-
-}
-
-resource "aws_vpc_endpoint" "vpc_endpoints" {
-  count        = length(var.vpc_endpoints)
-  service_name = "com.amazonaws.${data.aws_region.current.name}.${var.vpc_endpoints[count.index]}"
-  vpc_id       = aws_vpc.main.id
-
-  vpc_endpoint_type = var.vpc_endpoints[count.index] == "s3" || var.vpc_endpoints[count.index] == "dynamodb" ? "Gateway" : "Interface"
-  route_table_ids   = var.vpc_endpoints[count.index] == "s3" || var.vpc_endpoints[count.index] == "dynamodb" ? aws_route_table.private.*.id : null
-
-  subnet_ids = var.vpc_endpoints[count.index] != "s3" && var.vpc_endpoints[count.index] != "dynamodb" ? aws_subnet.private.*.id : null
-
-  private_dns_enabled = var.vpc_endpoints[count.index] != "s3" && var.vpc_endpoints[count.index] != "dynamodb" ? true : null
-
-  security_group_ids = var.vpc_endpoints[count.index] != "s3" && var.vpc_endpoints[count.index] != "dynamodb" ? [aws_security_group.vpc_endpoint_security_group[0].id] : null
-
-  tags = merge(var.common_tags, { "Name" : "vpce-${var.vpc_endpoints[count.index]}" })
-
 }

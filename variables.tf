@@ -49,3 +49,8 @@ variable "vpc_endpoints" {
     error_message = "Invalid VPC Endpoint service, allowed values are s3, sns, execute-api, dynamodb, rds."
   }
 }
+
+variable "bastion" {
+  type = bool
+  default = false
+}

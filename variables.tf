@@ -7,11 +7,6 @@ variable "tg_routes" {
   default = []
 }
 
-variable "common_tags" {
-  type    = map(string)
-  default = ({})
-}
-
 variable "project_name" {
   type = string
 }
@@ -45,12 +40,14 @@ variable "vpc_endpoints" {
   default = []
   validation {
     condition     = contains(var.vpc_endpoints, "s3") || contains(var.vpc_endpoints, "sns") || contains(var.vpc_endpoints, "execute-api") || contains(var.vpc_endpoints, "dynamodb") || contains(var.vpc_endpoints, "rds")
-
     error_message = "Invalid VPC Endpoint service, allowed values are s3, sns, execute-api, dynamodb, rds."
   }
 }
 
 variable "bastion" {
-  type = bool
-  default = false
+  type = object({
+    enabled: bool,
+    certificate_name: string,
+    certificate_key: optional(string)
+  })
 }

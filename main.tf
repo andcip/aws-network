@@ -1,3 +1,7 @@
+terraform {
+  experiments = [module_variable_optional_attrs]
+}
+
 data "aws_availability_zones" "az" {}
 
 data "aws_ec2_transit_gateway" "transit" {
@@ -20,7 +24,7 @@ resource "aws_vpc" "main" {
   cidr_block           = var.cidr_block
   enable_dns_hostnames = true
   enable_dns_support   = true
-  tags                 = merge(var.common_tags, { "Name" : var.project_name })
+  tags                 = { "Name" : var.project_name }
 }
 
 
@@ -32,12 +36,11 @@ resource "aws_subnet" "public" {
   availability_zone       = data.aws_availability_zones.az.names[count.index]
   cidr_block              = length(var.subnets.public.cidr) > 0 ? var.subnets.public.cidr[count.index] : local.public_subnets[count.index]
 
-  tags = merge(var.common_tags,
-  {
+  tags = {
     "Name" = "public-subnet-${count.index}"
     "AZ"   = data.aws_availability_zones.az.names[count.index]
     "Type" = "Public"
-  })
+  }
 }
 
 ## Private Subnets
@@ -48,26 +51,24 @@ resource "aws_subnet" "private" {
   availability_zone       = data.aws_availability_zones.az.names[count.index]
   cidr_block              = length(var.subnets.public.cidr) > 0 ? var.subnets.private.cidr[count.index] : local.private_subnets[count.index]
 
-  tags = merge(var.common_tags,
-  {
+  tags = {
     "Name" = "private-subnet-${count.index}"
     "AZ"   = data.aws_availability_zones.az.names[count.index]
     "Type" = "Private"
-  })
+  }
 }
 
 ## Internet Gateway
 resource "aws_internet_gateway" "igw" {
   count  = var.subnets.public.count > 0 ? 1 : 0
   vpc_id = aws_vpc.main.id
-  tags   = var.common_tags
 }
 
 ## Elastic IP for the NAT Gateway
 resource "aws_eip" "nat" {
   count = var.subnets.public.count
   vpc   = true
-  tags  = merge(var.common_tags, { Name = "natgw-eip-${count.index}" })
+  tags  = { Name = "natgw-eip-${count.index}" }
 }
 
 ## NAT Gateway
@@ -76,7 +77,7 @@ resource "aws_nat_gateway" "ng" {
   allocation_id = aws_eip.nat[count.index].id
   subnet_id     = aws_subnet.public[count.index].id
   depends_on    = [aws_internet_gateway.igw[0]]
-  tags          = merge( var.common_tags, { Name = "natgw-${count.index}" })
+  tags          = { Name = "natgw-${count.index}" }
 }
 
 ## Private Route Table
@@ -98,7 +99,7 @@ resource "aws_route_table" "private" {
     }
   }
 
-  tags = merge( var.common_tags, { Name = "private-rt-${count.index}" })
+  tags = { Name = "private-rt-${count.index}" }
 }
 
 ## Public Route Table
@@ -109,7 +110,7 @@ resource "aws_route_table" "public" {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.igw[count.index].id
   }
-  tags   = merge(var.common_tags, { Name = "public-rt" })
+  tags   = { Name = "public-rt" }
 }
 
 
@@ -143,8 +144,9 @@ module "vpce" {
 
 module "bastion" {
   source = "./bastion"
-  count = var.bastion ? 1 : 0
-  acm_key_name = ""
+  count = var.bastion.enabled ? 1 : 0
+  acm_key_name = var.bastion.certificate_name
+  acm_key_file = var.bastion.certificate_key
   vpc = {id: aws_vpc.main.id, public_subnet_id: aws_subnet.public[0].id}
 
 }

@@ -52,4 +52,11 @@ variable "bastion" {
     certificate_name : string,
     certificate_key : string
   })
+  default = {enabled: false, certificate_name: null, certificate_key: null}
+
+  validation {
+    condition = var.bastion.enabled ? var.bastion.certificate_name != null && var.bastion.certificate_key != null : true
+
+    error_message = "If bastion is enabled, certificate_name and certificate_key must not be null."
+  }
 }

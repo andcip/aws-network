@@ -11,6 +11,11 @@ variable "project_name" {
   type = string
 }
 
+variable "vpc_flow_log_enabled" {
+  type = bool
+  default = false
+}
+
 variable "subnets" {
   type = object({
     private : object({

@@ -131,6 +131,67 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "tg_vpc_attachment" {
   vpc_id             = aws_vpc.main.id
 }
 
+resource "aws_flow_log" "vpc_flow_log" {
+  count = var.vpc_flow_log_enabled ? 1 : 0
+  iam_role_arn    = aws_iam_role.flow_log_role.arn
+  log_destination = aws_cloudwatch_log_group.vpc_flow_log_group.arn
+  traffic_type    = "ALL"
+  vpc_id          = aws_vpc.main.id
+}
+
+resource "aws_cloudwatch_log_group" "vpc_flow_log_group" {
+  count = var.vpc_flow_log_enabled ? 1 : 0
+  name = "vpc_flow_log"
+  retention_in_days = 180
+}
+
+resource "aws_iam_role" "flow_log_role" {
+  count = var.vpc_flow_log_enabled ? 1 : 0
+  name = "vpc_flow_log_role"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "vpc-flow-logs.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "flow_log_policy" {
+  count = var.vpc_flow_log_enabled ? 1 : 0
+  name = "flow_log_policy"
+  role = aws_iam_role.flow_log_role.id
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogGroups",
+        "logs:DescribeLogStreams"
+      ],
+      "Effect": "Allow",
+      "Resource": "*"
+    }
+  ]
+}
+EOF
+}
+
+
 
 module "vpce" {
   source = "./vpce"

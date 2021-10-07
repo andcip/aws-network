@@ -32,6 +32,9 @@ resource "aws_instance" "bastion" {
   key_name               = var.acm_key_name
   subnet_id              = var.vpc.public_subnet_id
   vpc_security_group_ids = [aws_security_group.ssh_access.id]
+  metadata_options {
+    http_tokens = "required"
+  }
 
   tags = {
     "Name"      = "BastionHost"

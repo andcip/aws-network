@@ -133,8 +133,8 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "tg_vpc_attachment" {
 
 resource "aws_flow_log" "vpc_flow_log" {
   count = var.vpc_flow_log_enabled ? 1 : 0
-  iam_role_arn    = aws_iam_role.flow_log_role.arn
-  log_destination = aws_cloudwatch_log_group.vpc_flow_log_group.arn
+  iam_role_arn    = aws_iam_role.flow_log_role[0].arn
+  log_destination = aws_cloudwatch_log_group.vpc_flow_log_group[0].arn
   traffic_type    = "ALL"
   vpc_id          = aws_vpc.main.id
 }
@@ -169,7 +169,7 @@ EOF
 resource "aws_iam_role_policy" "flow_log_policy" {
   count = var.vpc_flow_log_enabled ? 1 : 0
   name = "flow_log_policy"
-  role = aws_iam_role.flow_log_role.id
+  role = aws_iam_role.flow_log_role[0].id
 
   policy = <<EOF
 {

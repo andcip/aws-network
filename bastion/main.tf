@@ -34,6 +34,7 @@ resource "aws_instance" "bastion" {
   vpc_security_group_ids = [aws_security_group.ssh_access.id]
   metadata_options {
     http_tokens = "required"
+    http_endpoint = "enabled"
   }
 
   tags = {

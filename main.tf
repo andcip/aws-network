@@ -1,4 +1,3 @@
-
 data "aws_availability_zones" "az" {}
 
 data "aws_ec2_transit_gateway" "transit" {
@@ -132,7 +131,7 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "tg_vpc_attachment" {
 }
 
 resource "aws_flow_log" "vpc_flow_log" {
-  count = var.vpc_flow_log_enabled ? 1 : 0
+  count           = var.vpc_flow_log_enabled ? 1 : 0
   iam_role_arn    = aws_iam_role.flow_log_role[0].arn
   log_destination = aws_cloudwatch_log_group.vpc_flow_log_group[0].arn
   traffic_type    = "ALL"
@@ -140,14 +139,14 @@ resource "aws_flow_log" "vpc_flow_log" {
 }
 
 resource "aws_cloudwatch_log_group" "vpc_flow_log_group" {
-  count = var.vpc_flow_log_enabled ? 1 : 0
-  name = "vpc_flow_log"
+  count             = var.vpc_flow_log_enabled ? 1 : 0
+  name              = "vpc_flow_log"
   retention_in_days = 180
 }
 
 resource "aws_iam_role" "flow_log_role" {
   count = var.vpc_flow_log_enabled ? 1 : 0
-  name = "vpc_flow_log_role"
+  name  = "${var.project_name}_vpc_flow_log_role"
 
   assume_role_policy = <<EOF
 {
@@ -168,8 +167,8 @@ EOF
 
 resource "aws_iam_role_policy" "flow_log_policy" {
   count = var.vpc_flow_log_enabled ? 1 : 0
-  name = "flow_log_policy"
-  role = aws_iam_role.flow_log_role[0].id
+  name  = "${var.project_name}_flow_log_policy"
+  role  = aws_iam_role.flow_log_role[0].id
 
   policy = <<EOF
 {
@@ -192,20 +191,24 @@ EOF
 }
 
 
-
 module "vpce" {
-  source = "./vpce"
-  count = length(var.vpc_endpoints) > 0 ? 1 : 0
-  vpc = {id: aws_vpc.main.id, cidr: aws_vpc.main.cidr_block, private_subnets_ids: aws_subnet.private.*.id, private_route_table_ids: aws_route_table.private.*.id}
+  source        = "./vpce"
+  count         = length(var.vpc_endpoints) > 0 ? 1 : 0
+  vpc           = {
+    id : aws_vpc.main.id,
+    cidr : aws_vpc.main.cidr_block,
+    private_subnets_ids : aws_subnet.private.*.id,
+    private_route_table_ids : aws_route_table.private.*.id
+  }
   vpc_endpoints = var.vpc_endpoints
 }
 
 module "bastion" {
-  source = "./bastion"
-  count = var.bastion.enabled ? 1 : 0
+  source       = "./bastion"
+  count        = var.bastion.enabled ? 1 : 0
   acm_key_name = var.bastion.certificate_name
   acm_key_file = var.bastion.certificate_key
-  vpc = {id: aws_vpc.main.id, public_subnet_id: aws_subnet.public[0].id}
+  vpc          = { id : aws_vpc.main.id, public_subnet_id : aws_subnet.public[0].id }
 
 }
 

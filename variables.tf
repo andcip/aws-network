@@ -53,9 +53,9 @@ variable "vpc_endpoints" {
 
   validation {
     condition     = alltrue([
-    for vpce in var.vpc_endpoints : contains(["s3", "sns", "execute-api", "dynamodb", "ecr.dkr", "ecr.api", "rds", "states"], vpce)
+    for vpce in var.vpc_endpoints : contains(["s3", "sns", "execute-api", "dynamodb", "ecr.dkr", "ecr.api", "secretsmanager", "states"], vpce)
     ])
-    error_message = "Invalid VPC Endpoint service, allowed values are s3, sns, execute-api, dynamodb, ecr.api, ecr.dkr, rds, states."
+    error_message = "Invalid VPC Endpoint service, allowed values are s3, sns, execute-api, dynamodb, ecr.api, ecr.dkr, rds, secretsmanager."
   }
 }
 

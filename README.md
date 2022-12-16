@@ -13,13 +13,13 @@ This module deploy a complete VPC, with Endpoints, Routing tables and a Bastion 
 ## If subnet are not specified, 4 subnets ( 2 public and 2 private ) are created automatically from the vpc cidr.
 cidr_block = "10.0.0.0/24"
 
-project_name = "Investor"
+project_name = "Test"
 
 vpc_endpoints = ["s3", "ecr.dkr", "ecr.api"]
 
 bastion = {
   enabled : true,
-  certificate_name : "eolo-investor",
+  certificate_name : "test-certificate",
   certificate_key : "${get_terragrunt_dir()}/../investor.pub"
 }
 

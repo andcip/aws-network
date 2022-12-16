@@ -211,19 +211,3 @@ module "bastion" {
   vpc          = { id : aws_vpc.main.id, public_subnet_id : aws_subnet.public[0].id }
 
 }
-
-
-resource "aws_ssm_parameter" "private_subnet_ids" {
-  count       = var.subnets.private.count
-  name        = "/${var.project_name}/infrastructure/vpc/subnets/private/${count.index}/id"
-  description = "Export the private subnet ${count.index} id"
-  type        = "String"
-  value       = aws_subnet.private[count.index].id
-}
-
-resource "aws_ssm_parameter" "vpc" {
-  name        = "/${var.project_name}/infrastructure/vpc/id"
-  description = "Export vpc id"
-  type        = "String"
-  value       = aws_vpc.main.id
-}
